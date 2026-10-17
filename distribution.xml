@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Parámetros espinopélvicos para Horos</title>
+    <domains enable_anywhere="false" enable_currentUserHome="true" enable_localSystem="false"/>
+    <options customize="never" require-scripts="false" hostArchitectures="arm64"/>
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    <choices-outline>
+        <line choice="plugin"/>
+    </choices-outline>
+    <choice id="plugin" visible="false">
+        <pkg-ref id="com.columnaspine.horos.SpinopelvicParams"/>
+    </choice>
+    <pkg-ref id="com.columnaspine.horos.SpinopelvicParams" version="1.0">plugin.pkg</pkg-ref>
+</installer-gui-script>
