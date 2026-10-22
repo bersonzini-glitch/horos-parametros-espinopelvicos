@@ -64,6 +64,8 @@ Sin ese paso macOS bloquea la carga del plugin.
 4. Los resultados y las líneas auxiliares se actualizan en vivo. **Arrastrá cualquier punto para ajustarlo.** También podés elegir un paso en la lista para rehacerlo, o usar **Saltar**, **Borrar punto** y **Reiniciar**.
 5. **Copiar resultados** copia el informe al portapapeles para pegarlo en la historia clínica. **Acerca de…** muestra la versión y el autor, y abre columna-spine.com.
 
+**Actualizaciones.** Desde la versión 1.2, al abrir el panel el plugin consulta si hay una versión nueva. Si la hay, arriba del panel aparece **Actualizar a la versión…**: descarga el instalador a la carpeta Descargas y lo abre. Al terminar, cerrá y volvé a abrir Horos. Sin conexión a internet el botón simplemente no aparece.
+
 Los puntos se guardan con la imagen como ROIs de Horos. Si volvés a abrir el plugin sobre la misma imagen, los recupera.
 
 **Escala del SVA.** Si la imagen trae espaciado de píxel DICOM, el SVA se informa en mm. Si no lo trae (por ejemplo, una foto convertida a DICOM), se informa en píxeles. En ese caso dibujá una línea con la herramienta de longitud de Horos sobre un objeto de tamaño conocido (regla, esfera de calibración, implante), tocá **Calibrar…** e ingresá su medida real. Tené en cuenta que la magnificación radiográfica puede alterar el SVA. Los ángulos no dependen de la escala.
@@ -132,6 +134,8 @@ Without this, macOS refuses to load the plugin.
 3. Click each landmark as the panel asks: femoral head centers, the S1, L1, T12 and T4/T5 endplate corners (posterior, then anterior), and the T1 and C7 body centers. Optional steps can be skipped.
 4. Results and helper lines update live. Drag any point to adjust it.
 5. **Copiar resultados** copies the report to the clipboard. **Acerca de…** shows the version and author and opens columna-spine.com.
+
+From 1.2 on, the panel checks the latest GitHub release once per Horos session. When it is newer, an **Actualizar a la versión…** button downloads its installer to Downloads and opens it.
 
 Landmarks are regular Horos ROIs, so they are saved with the image and picked up again when the plugin is reopened. Without DICOM pixel spacing, SVA is shown in pixels until you calibrate on a length line of known size (**Calibrar…**).
 

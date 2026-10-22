@@ -47,10 +47,59 @@ static NSColor *RGB(NSColor *c) { return [c colorUsingColorSpace:NSColorSpace.sR
 @property NSTableView *table;
 @property NSTextView *results;
 @property NSPopUpButton *tkPopup;
+@property NSButton *updateButton;
 @property NSTimer *timer;
 @end
 
 static NSMutableArray<SPController *> *Controllers;
+
+#pragma mark - Updates
+
+// Once per Horos session, the latest GitHub release is compared with this bundle's version.
+// When it is newer, every open panel shows a button that downloads its installer and opens it.
+static NSString *const ReleasesAPI = @"https://api.github.com/repos/bersonzini-glitch/horos-parametros-espinopelvicos/releases/latest";
+static NSDictionary *LatestRelease;   // @{@"version", @"notes", @"pkg"} when an update exists
+static BOOL UpdateChecked;
+
+static NSString *BundleVersion(void) {
+    return [[NSBundle bundleForClass:SPController.class] objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"0";
+}
+
+// "v1.2.0" > "1.1": numeric components, missing ones count as 0.
+static BOOL IsNewer(NSString *candidate, NSString *current) {
+    NSArray *a = [[candidate stringByTrimmingCharactersInSet:NSCharacterSet.letterCharacterSet] componentsSeparatedByString:@"."];
+    NSArray *b = [current componentsSeparatedByString:@"."];
+    for (NSUInteger i = 0; i < MAX(a.count, b.count); i++) {
+        NSInteger x = i < a.count ? [a[i] integerValue] : 0, y = i < b.count ? [b[i] integerValue] : 0;
+        if (x != y) return x > y;
+    }
+    return NO;
+}
+
+static void CheckForUpdate(void (^done)(void)) {
+    if (UpdateChecked) { done(); return; }
+    UpdateChecked = YES;
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:ReleasesAPI]];
+    [req setValue:@"application/vnd.github+json" forHTTPHeaderField:@"Accept"];
+    req.timeoutInterval = 15;
+    [[NSURLSession.sharedSession dataTaskWithRequest:req completionHandler:^(NSData *data, NSURLResponse *resp, NSError *err) {
+        NSDictionary *json = data && !err ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+        NSString *tag = [json isKindOfClass:NSDictionary.class] ? json[@"tag_name"] : nil;
+        NSString *pkg = nil;
+        for (NSDictionary *asset in json[@"assets"]) {
+            if ([asset[@"name"] hasSuffix:@".pkg"]) pkg = asset[@"browser_download_url"];
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if ([tag isKindOfClass:NSString.class] && pkg && IsNewer(tag, BundleVersion())) {
+                NSString *notes = [json[@"body"] isKindOfClass:NSString.class] ? json[@"body"] : @"";
+                LatestRelease = @{@"version": [tag stringByTrimmingCharactersInSet:NSCharacterSet.letterCharacterSet], @"notes": notes, @"pkg": pkg};
+            } else if (!tag) {
+                UpdateChecked = NO;   // offline or rate-limited: try again next time a panel opens
+            }
+            done();
+        });
+    }] resume];
+}
 
 @implementation SPController {
     ROI *__strong _rois[SPLandmarkCount];
@@ -78,6 +127,7 @@ static NSMutableArray<SPController *> *Controllers;
     [nc addObserver:c selector:@selector(viewerClosed:) name:@"CloseViewerNotification" object:viewer];
     c.timer = [NSTimer scheduledTimerWithTimeInterval:0.25 target:c selector:@selector(tick:) userInfo:nil repeats:YES];
     [viewer setROIToolTag:t2DPoint];
+    CheckForUpdate(^{ for (SPController *o in Controllers) [o showUpdateButton]; });
 }
 
 - (NSMutableArray<ROI *> *)sliceROIs {
@@ -203,13 +253,19 @@ static NSButton *Button(NSString *title, id target, SEL action) {
         Button(@"Acerca de…", self, @selector(showAbout:)),
     ]];
 
-    NSStackView *v = [NSStackView stackViewWithViews:@[self.instruction, ts, stepButtons, tkRow, rs, self.calibrationLabel, bottom]];
+    // Hidden until CheckForUpdate finds a newer release.
+    self.updateButton = Button(@"", self, @selector(installUpdate:));
+    self.updateButton.bezelColor = NSColor.controlAccentColor;
+    self.updateButton.keyEquivalent = @"";
+    self.updateButton.hidden = YES;
+
+    NSStackView *v = [NSStackView stackViewWithViews:@[self.updateButton, self.instruction, ts, stepButtons, tkRow, rs, self.calibrationLabel, bottom]];
     v.orientation = NSUserInterfaceLayoutOrientationVertical;
     v.alignment = NSLayoutAttributeLeading;
     v.spacing = 10;
     v.edgeInsets = NSEdgeInsetsMake(14, 14, 14, 14);
     p.contentView = v;
-    for (NSView *w in @[self.instruction, ts, rs, self.calibrationLabel]) {
+    for (NSView *w in @[self.updateButton, self.instruction, ts, rs, self.calibrationLabel]) {
         [w.widthAnchor constraintEqualToAnchor:v.widthAnchor constant:-28].active = YES;
     }
     [ts.heightAnchor constraintEqualToConstant:SPLandmarkCount * 22 + 4].active = YES;
@@ -552,9 +608,8 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
 }
 
 - (void)showAbout:(id)sender {
-    NSString *version = [[NSBundle bundleForClass:SPController.class] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
     NSAlert *a = [NSAlert new];
-    a.messageText = [NSString stringWithFormat:@"Parámetros espinopélvicos %@", version ?: @""];
+    a.messageText = [NSString stringWithFormat:@"Parámetros espinopélvicos %@", BundleVersion()];
     a.informativeText = @"Plugin para Horos que mide PI, PT, SS, LL, PI−LL, cifosis torácica, T1PA y SVA, con los modificadores SRS-Schwab.\n\n"
                         @"Autor: Dr. Bernardo Sonzini Astudillo\ncolumna-spine.com\n\n"
                         @"Herramienta de apoyo; no es un dispositivo médico. Código abierto (licencia MIT).";
@@ -563,6 +618,53 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
     if ([a runModal] == NSAlertFirstButtonReturn) {
         [NSWorkspace.sharedWorkspace openURL:[NSURL URLWithString:@"https://www.columna-spine.com/"]];
     }
+}
+
+- (void)showUpdateButton {
+    if (!LatestRelease) return;
+    self.updateButton.title = [NSString stringWithFormat:@"Actualizar a la versión %@…", LatestRelease[@"version"]];
+    self.updateButton.hidden = NO;
+}
+
+- (void)installUpdate:(id)sender {
+    NSString *version = LatestRelease[@"version"];
+    NSString *notes = [LatestRelease[@"notes"] stringByReplacingOccurrencesOfString:@"[*`#]" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, [LatestRelease[@"notes"] length])];
+    notes = [notes stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    if (notes.length > 600) notes = [[notes substringToIndex:600] stringByAppendingString:@"…"];
+    NSAlert *a = [NSAlert new];
+    a.messageText = [NSString stringWithFormat:@"Hay una versión nueva: %@ (tenés la %@)", version, BundleVersion()];
+    a.informativeText = [NSString stringWithFormat:@"%@%@Se va a descargar el instalador y se abrirá. Seguí sus pasos y, al terminar, cerrá y volvé a abrir Horos.",
+                         notes, notes.length ? @"\n\n" : @""];
+    [a addButtonWithTitle:@"Descargar e instalar"];
+    [a addButtonWithTitle:@"Ahora no"];
+    if ([a runModal] != NSAlertFirstButtonReturn) return;
+
+    self.updateButton.enabled = NO;
+    self.updateButton.title = @"Descargando la actualización…";
+    NSURL *url = [NSURL URLWithString:LatestRelease[@"pkg"]];
+    [[NSURLSession.sharedSession downloadTaskWithURL:url completionHandler:^(NSURL *tmp, NSURLResponse *resp, NSError *err) {
+        NSInteger status = [resp isKindOfClass:NSHTTPURLResponse.class] ? ((NSHTTPURLResponse *)resp).statusCode : 0;
+        NSURL *dest = nil;
+        if (tmp && !err && status == 200) {
+            NSURL *downloads = [NSFileManager.defaultManager URLsForDirectory:NSDownloadsDirectory inDomains:NSUserDomainMask].firstObject;
+            dest = [downloads URLByAppendingPathComponent:[NSString stringWithFormat:@"Instalar Parametros Espinopelvicos %@.pkg", version]];
+            [NSFileManager.defaultManager removeItemAtURL:dest error:nil];
+            if (![NSFileManager.defaultManager moveItemAtURL:tmp toURL:dest error:nil]) dest = nil;
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.updateButton.enabled = YES;
+            [self showUpdateButton];
+            if (dest) { [NSWorkspace.sharedWorkspace openURL:dest]; return; }
+            NSAlert *e = [NSAlert new];
+            e.messageText = @"No se pudo descargar la actualización.";
+            e.informativeText = @"Revisá la conexión a internet o descargala desde la página del plugin en GitHub.";
+            [e addButtonWithTitle:@"Abrir la página"];
+            [e addButtonWithTitle:@"Cerrar"];
+            if ([e runModal] == NSAlertFirstButtonReturn) {
+                [NSWorkspace.sharedWorkspace openURL:[NSURL URLWithString:@"https://github.com/bersonzini-glitch/horos-parametros-espinopelvicos/releases/latest"]];
+            }
+        });
+    }] resume];
 }
 
 - (void)viewerClosed:(NSNotification *)n { [self.panel close]; }
