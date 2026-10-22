@@ -200,6 +200,7 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     NSStackView *bottom = [NSStackView stackViewWithViews:@[
         Button(@"Calibrar…", self, @selector(calibrate:)),
         Button(@"Copiar resultados", self, @selector(copyResults:)),
+        Button(@"Acerca de…", self, @selector(showAbout:)),
     ]];
 
     NSStackView *v = [NSStackView stackViewWithViews:@[self.instruction, ts, stepButtons, tkRow, rs, self.calibrationLabel, bottom]];
@@ -548,6 +549,20 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
     NSPasteboard *pb = NSPasteboard.generalPasteboard;
     [pb clearContents];
     [pb setString:self.resultsText ?: @"" forType:NSPasteboardTypeString];
+}
+
+- (void)showAbout:(id)sender {
+    NSString *version = [[NSBundle bundleForClass:SPController.class] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+    NSAlert *a = [NSAlert new];
+    a.messageText = [NSString stringWithFormat:@"Parámetros espinopélvicos %@", version ?: @""];
+    a.informativeText = @"Plugin para Horos que mide PI, PT, SS, LL, PI−LL, cifosis torácica, T1PA y SVA, con los modificadores SRS-Schwab.\n\n"
+                        @"Autor: Dr. Bernardo Sonzini Astudillo\ncolumna-spine.com\n\n"
+                        @"Herramienta de apoyo; no es un dispositivo médico. Código abierto (licencia MIT).";
+    [a addButtonWithTitle:@"Abrir columna-spine.com"];
+    [a addButtonWithTitle:@"Cerrar"];
+    if ([a runModal] == NSAlertFirstButtonReturn) {
+        [NSWorkspace.sharedWorkspace openURL:[NSURL URLWithString:@"https://www.columna-spine.com/"]];
+    }
 }
 
 - (void)viewerClosed:(NSNotification *)n { [self.panel close]; }

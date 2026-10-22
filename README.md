@@ -62,7 +62,7 @@ Sin ese paso macOS bloquea la carga del plugin.
    7. Centro del cuerpo de T1 (opcional)
    8. Centro del cuerpo de C7 (opcional)
 4. Los resultados y las líneas auxiliares se actualizan en vivo. **Arrastrá cualquier punto para ajustarlo.** También podés elegir un paso en la lista para rehacerlo, o usar **Saltar**, **Borrar punto** y **Reiniciar**.
-5. **Copiar resultados** copia el informe al portapapeles para pegarlo en la historia clínica.
+5. **Copiar resultados** copia el informe al portapapeles para pegarlo en la historia clínica. **Acerca de…** muestra la versión y el autor, y abre columna-spine.com.
 
 Los puntos se guardan con la imagen como ROIs de Horos. Si volvés a abrir el plugin sobre la misma imagen, los recupera.
 
@@ -131,7 +131,7 @@ Without this, macOS refuses to load the plugin.
 2. **Plugins → ROI Tools → Parámetros espinopélvicos…** A floating panel lists the steps, and the point tool is selected.
 3. Click each landmark as the panel asks: femoral head centers, the S1, L1, T12 and T4/T5 endplate corners (posterior, then anterior), and the T1 and C7 body centers. Optional steps can be skipped.
 4. Results and helper lines update live. Drag any point to adjust it.
-5. **Copiar resultados** copies the report to the clipboard.
+5. **Copiar resultados** copies the report to the clipboard. **Acerca de…** shows the version and author and opens columna-spine.com.
 
 Landmarks are regular Horos ROIs, so they are saved with the image and picked up again when the plugin is reopened. Without DICOM pixel spacing, SVA is shown in pixels until you calibrate on a length line of known size (**Calibrar…**).
 
