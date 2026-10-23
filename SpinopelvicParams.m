@@ -114,12 +114,12 @@ static void ReportInstall(void) {
 // so without internet the panel shows the last one received; an empty message clears it.
 static NSString *const NoticeKey = @"SagitalAppAviso";
 
-// The message with clickable links: bare addresses (https://… or www.…) or [texto](https://…).
+// The message with clickable links: bare addresses (https://… or www.…), [texto](https://…) or emails.
 static NSAttributedString *NoticeText(NSString *text) {
     NSDictionary *base = @{NSFontAttributeName: [NSFont systemFontOfSize:12], NSForegroundColorAttributeName: NSColor.labelColor};
     NSMutableAttributedString *out = [[NSMutableAttributedString alloc] initWithString:@"" attributes:base];
     NSRegularExpression *re = [NSRegularExpression regularExpressionWithPattern:
-        @"\\[([^\\]\\n]+)\\]\\((https?://[^\\s)]+)\\)|(https?://[^\\s<>\"]+|www\\.[^\\s<>\"]+)" options:0 error:nil];
+        @"\\[([^\\]\\n]+)\\]\\((https?://[^\\s)]+)\\)|(https?://[^\\s<>\"]+|www\\.[^\\s<>\"]+)|([\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+)" options:0 error:nil];
     __block NSUInteger last = 0;
     [re enumerateMatchesInString:text options:0 range:NSMakeRange(0, text.length) usingBlock:^(NSTextCheckingResult *m, NSMatchingFlags f, BOOL *stop) {
         [out appendAttributedString:[[NSAttributedString alloc] initWithString:[text substringWithRange:NSMakeRange(last, m.range.location - last)] attributes:base]];
@@ -127,6 +127,9 @@ static NSAttributedString *NoticeText(NSString *text) {
         if ([m rangeAtIndex:1].location != NSNotFound) {
             label = [text substringWithRange:[m rangeAtIndex:1]];
             url = [text substringWithRange:[m rangeAtIndex:2]];
+        } else if ([m rangeAtIndex:4].location != NSNotFound) {
+            label = [text substringWithRange:[m rangeAtIndex:4]];
+            url = [@"mailto:" stringByAppendingString:label];
         } else {
             url = [text substringWithRange:[m rangeAtIndex:3]];
             // A sentence's closing punctuation is not part of the address.
