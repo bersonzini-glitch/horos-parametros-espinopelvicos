@@ -187,7 +187,7 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     NSPanel *p = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, 400, 660)
                                             styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow | NSWindowStyleMaskResizable
                                               backing:NSBackingStoreBuffered defer:NO];
-    p.title = @"Parámetros espinopélvicos";
+    p.title = @"SagitalApp · Parámetros espinopélvicos";
     p.floatingPanel = YES;
     p.becomesKeyOnlyIfNeeded = YES;
     p.hidesOnDeactivate = YES;
@@ -609,8 +609,8 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
 
 - (void)showAbout:(id)sender {
     NSAlert *a = [NSAlert new];
-    a.messageText = [NSString stringWithFormat:@"Parámetros espinopélvicos %@", BundleVersion()];
-    a.informativeText = @"Plugin para Horos que mide PI, PT, SS, LL, PI−LL, cifosis torácica, T1PA y SVA, con los modificadores SRS-Schwab.\n\n"
+    a.messageText = [NSString stringWithFormat:@"SagitalApp %@", BundleVersion()];
+    a.informativeText = @"Parámetros espinopélvicos en Horos: mide PI, PT, SS, LL, PI−LL, cifosis torácica, T1PA y SVA, con los modificadores SRS-Schwab.\n\n"
                         @"Autor: Dr. Bernardo Sonzini Astudillo\ncolumna-spine.com\n\n"
                         @"Herramienta de apoyo; no es un dispositivo médico. Código abierto (licencia MIT).";
     [a addButtonWithTitle:@"Abrir columna-spine.com"];
@@ -647,7 +647,7 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
         NSURL *dest = nil;
         if (tmp && !err && status == 200) {
             NSURL *downloads = [NSFileManager.defaultManager URLsForDirectory:NSDownloadsDirectory inDomains:NSUserDomainMask].firstObject;
-            dest = [downloads URLByAppendingPathComponent:[NSString stringWithFormat:@"Instalar Parametros Espinopelvicos %@.pkg", version]];
+            dest = [downloads URLByAppendingPathComponent:[NSString stringWithFormat:@"Instalar SagitalApp Horos %@.pkg", version]];
             [NSFileManager.defaultManager removeItemAtURL:dest error:nil];
             if (![NSFileManager.defaultManager moveItemAtURL:tmp toURL:dest error:nil]) dest = nil;
         }

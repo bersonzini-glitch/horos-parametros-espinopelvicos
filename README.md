@@ -1,8 +1,14 @@
-# Parámetros espinopélvicos — Horos plugin for Apple Silicon
+# SagitalApp para Horos — parámetros espinopélvicos (Apple Silicon)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/sagitalapp-logo-dark.png">
+  <img alt="SagitalApp" src="docs/sagitalapp-logo-light.png" width="320">
+</picture>
+
 
 [Español](#español) · [English](#english)
 
-Native **arm64** plugin for **Horos 4** that measures sagittal spinopelvic alignment on a lateral standing radiograph, in the spirit of Surgimap: **PI, PT, SS, LL, PI−LL, SVA, T1PA and thoracic kyphosis**, with the SRS-Schwab sagittal modifiers.
+Native **arm64** plugin for **Horos 4** that measures sagittal spinopelvic alignment on a lateral standing radiograph: **PI, PT, SS, LL, PI−LL, SVA, T1PA and thoracic kyphosis**, with the SRS-Schwab sagittal modifiers.
 
 ---
 
@@ -32,7 +38,7 @@ Convenciones: LL y TK positivos significan lordosis y cifosis. SVA y PT positivo
 
 ### Instalación
 
-1. Descargá **`Instalar Parametros Espinopelvicos.pkg`** desde [Releases](../../releases/latest).
+1. Descargá **`Instalar-SagitalApp-Horos.pkg`** desde [Releases](../../releases/latest).
 2. Hacé doble clic. Como el instalador no está notarizado por Apple, la Mac puede decir que no puede verificarlo: tocá **OK**, andá a **Ajustes del Sistema → Privacidad y seguridad**, bajá hasta el final y tocá **"Abrir igualmente"**.
 3. Seguí el instalador y, al terminar, cerrá y volvé a abrir Horos.
 
@@ -51,7 +57,7 @@ Sin ese paso macOS bloquea la carga del plugin.
 ### Uso
 
 1. Abrí en el visor una **telerradiografía de columna completa de perfil**, de pie.
-2. Menú **Plugins → ROI Tools → Parámetros espinopélvicos…** Se abre un panel con los pasos, y la herramienta de punto queda activa.
+2. Menú **Plugins → ROI Tools → SagitalApp – Parámetros espinopélvicos…** Se abre un panel con los pasos, y la herramienta de punto queda activa.
 3. Hacé clic en la imagen en el orden que pide el panel. Cada clic avanza al paso siguiente:
    1. Centro de la cabeza femoral 1
    2. Centro de la cabeza femoral 2 (opcional; saltalo si se superponen)
@@ -111,7 +117,7 @@ Sign conventions: positive LL and TK mean lordosis and kyphosis. Positive SVA an
 
 ### Install
 
-1. Download **`Instalar Parametros Espinopelvicos.pkg`** from [Releases](../../releases/latest).
+1. Download **`Instalar-SagitalApp-Horos.pkg`** from [Releases](../../releases/latest).
 2. Double-click it. The installer isn't notarized by Apple, so macOS may say it can't verify it: click **OK**, open **System Settings → Privacy & Security**, scroll down and click **"Open Anyway"**.
 3. Follow the installer, then quit and reopen Horos.
 
@@ -130,7 +136,7 @@ Without this, macOS refuses to load the plugin.
 ### Usage
 
 1. Open a **standing lateral whole-spine radiograph** in the 2D viewer.
-2. **Plugins → ROI Tools → Parámetros espinopélvicos…** A floating panel lists the steps, and the point tool is selected.
+2. **Plugins → ROI Tools → SagitalApp – Parámetros espinopélvicos…** A floating panel lists the steps, and the point tool is selected.
 3. Click each landmark as the panel asks: femoral head centers, the S1, L1, T12 and T4/T5 endplate corners (posterior, then anterior), and the T1 and C7 body centers. Optional steps can be skipped.
 4. Results and helper lines update live. Drag any point to adjust it.
 5. **Copiar resultados** copies the report to the clipboard. **Acerca de…** shows the version and author and opens columna-spine.com.

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="2">
-    <title>Parámetros espinopélvicos para Horos</title>
+    <title>SagitalApp para Horos</title>
     <domains enable_anywhere="false" enable_currentUserHome="true" enable_localSystem="false"/>
     <options customize="never" require-scripts="false" hostArchitectures="arm64"/>
     <welcome file="welcome.html" mime-type="text/html"/>

@@ -31,5 +31,5 @@ VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" Info.pli
 pkgbuild --root build/pkgroot --component-plist build/component.plist --install-location / \
   --identifier com.columnaspine.horos.SpinopelvicParams --version "$VERSION" build/plugin.pkg >/dev/null
 productbuild --distribution distribution.xml --resources installer --package-path build \
-  "build/Instalar Parametros Espinopelvicos.pkg" >/dev/null
+  "build/Instalar SagitalApp Horos.pkg" >/dev/null
 echo "Built installer"
