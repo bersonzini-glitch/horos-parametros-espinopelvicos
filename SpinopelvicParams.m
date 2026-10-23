@@ -48,6 +48,7 @@ static NSColor *RGB(NSColor *c) { return [c colorUsingColorSpace:NSColorSpace.sR
 @property NSTextView *results;
 @property NSPopUpButton *tkPopup;
 @property NSButton *updateButton;
+@property NSTextField *notice;
 @property NSTimer *timer;
 @end
 
@@ -109,6 +110,26 @@ static void ReportInstall(void) {
     }] resume];
 }
 
+// The author's current message, from sagitalapp.com/api/aviso. It is kept in Horos's preferences,
+// so without internet the panel shows the last one received; an empty message clears it.
+static NSString *const NoticeKey = @"SagitalAppAviso";
+
+static void FetchNotice(void (^done)(void)) {
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://sagitalapp.com/api/aviso"]];
+    req.cachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+    req.timeoutInterval = 15;
+    [[NSURLSession.sharedSession dataTaskWithRequest:req completionHandler:^(NSData *data, NSURLResponse *resp, NSError *err) {
+        NSInteger status = [resp isKindOfClass:NSHTTPURLResponse.class] ? ((NSHTTPURLResponse *)resp).statusCode : 0;
+        NSDictionary *json = data && !err && status == 200 ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+        NSString *text = [json isKindOfClass:NSDictionary.class] ? json[@"texto"] : nil;
+        if (![text isKindOfClass:NSString.class]) return;   // offline: keep the last one
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [NSUserDefaults.standardUserDefaults setObject:text forKey:NoticeKey];
+            done();
+        });
+    }] resume];
+}
+
 static void CheckForUpdate(void (^done)(void)) {
     if (UpdateChecked) { done(); return; }
     UpdateChecked = YES;
@@ -162,6 +183,7 @@ static void CheckForUpdate(void (^done)(void)) {
     [viewer setROIToolTag:t2DPoint];
     CheckForUpdate(^{ for (SPController *o in Controllers) [o showUpdateButton]; });
     ReportInstall();
+    FetchNotice(^{ for (SPController *o in Controllers) [o showNotice]; });
 }
 
 - (NSMutableArray<ROI *> *)sliceROIs {
@@ -218,7 +240,7 @@ static NSButton *Button(NSString *title, id target, SEL action) {
 }
 
 - (void)buildPanel {
-    NSPanel *p = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, 400, 660)
+    NSPanel *p = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, 400, 740)
                                             styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow | NSWindowStyleMaskResizable
                                               backing:NSBackingStoreBuffered defer:NO];
     p.title = @"SagitalApp · Parámetros espinopélvicos";
@@ -293,13 +315,26 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     self.updateButton.keyEquivalent = @"";
     self.updateButton.hidden = YES;
 
-    NSStackView *v = [NSStackView stackViewWithViews:@[self.updateButton, self.instruction, ts, stepButtons, tkRow, rs, self.calibrationLabel, bottom]];
+    // Messages from the author (sagitalapp.com), below everything else.
+    self.notice = [NSTextField wrappingLabelWithString:@""];
+    self.notice.font = [NSFont systemFontOfSize:12];
+    self.notice.selectable = YES;
+    self.notice.preferredMaxLayoutWidth = 340;
+    NSBox *noticeBox = [NSBox new];
+    noticeBox.title = @"Avisos de SagitalApp";
+    noticeBox.titleFont = [NSFont systemFontOfSize:11];
+    noticeBox.contentViewMargins = NSMakeSize(8, 6);
+    noticeBox.contentView = self.notice;
+    [self.notice.heightAnchor constraintGreaterThanOrEqualToConstant:32].active = YES;
+    [self showNotice];
+
+    NSStackView *v = [NSStackView stackViewWithViews:@[self.updateButton, self.instruction, ts, stepButtons, tkRow, rs, self.calibrationLabel, bottom, noticeBox]];
     v.orientation = NSUserInterfaceLayoutOrientationVertical;
     v.alignment = NSLayoutAttributeLeading;
     v.spacing = 10;
     v.edgeInsets = NSEdgeInsetsMake(14, 14, 14, 14);
     p.contentView = v;
-    for (NSView *w in @[self.updateButton, self.instruction, ts, rs, self.calibrationLabel]) {
+    for (NSView *w in @[self.updateButton, self.instruction, ts, rs, self.calibrationLabel, noticeBox]) {
         [w.widthAnchor constraintEqualToAnchor:v.widthAnchor constant:-28].active = YES;
     }
     [ts.heightAnchor constraintEqualToConstant:SPLandmarkCount * 22 + 4].active = YES;
@@ -647,12 +682,16 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
     a.informativeText = @"Parámetros espinopélvicos en Horos: mide PI, PT, SS, LL, PI−LL, cifosis torácica, T1PA y SVA, con los modificadores SRS-Schwab.\n\n"
                         @"Autor: Dr. Bernardo Sonzini Astudillo\ncolumna-spine.com\n\n"
                         @"Herramienta de apoyo; no es un dispositivo médico. Código abierto (licencia MIT).\n\n"
-                        @"Al instalarse o actualizarse avisa a sagitalapp.com la versión y la ubicación aproximada (país y ciudad), para contar usuarios. Nunca envía imágenes ni datos de pacientes.";
+                        @"Al instalarse o actualizarse avisa a sagitalapp.com la versión y la ubicación aproximada (país y ciudad), para contar usuarios, y desde ahí recibe los avisos del autor. Nunca envía imágenes ni datos de pacientes.";
     [a addButtonWithTitle:@"Abrir columna-spine.com"];
     [a addButtonWithTitle:@"Cerrar"];
     if ([a runModal] == NSAlertFirstButtonReturn) {
         [NSWorkspace.sharedWorkspace openURL:[NSURL URLWithString:@"https://www.columna-spine.com/"]];
     }
+}
+
+- (void)showNotice {
+    self.notice.stringValue = [NSUserDefaults.standardUserDefaults stringForKey:NoticeKey] ?: @"";
 }
 
 - (void)showUpdateButton {
