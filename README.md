@@ -95,6 +95,10 @@ xcode-select --install   # si no las tenés
 ./build.sh               # corre los tests de geometría y genera el plugin, el .zip y el .pkg en build/
 ```
 
+### Privacidad
+
+Al instalarse o actualizarse, el plugin avisa a sagitalapp.com para que el autor sepa cuántos colegas lo usan. Envía la versión del plugin y del programa, el sistema operativo y un identificador al azar guardado en esa computadora. Con la conexión, el servidor estima la ubicación aproximada (país, provincia y ciudad) y no guarda la IP. **Nunca envía imágenes, datos de pacientes ni mediciones.**
+
 ### Aviso
 
 Herramienta de apoyo para medición. Los valores dependen de dónde se coloquen los puntos y deben ser revisados por el profesional. Este software **no es un dispositivo médico** y se distribuye "tal cual", sin garantía (ver [LICENSE](LICENSE)).
@@ -170,6 +174,10 @@ The plugin links against the Horos executable with `-bundle_loader` and declares
 | `SpinopelvicParams.m` | Plugin entry point, guided panel, landmark capture through Horos ROIs, helper lines |
 | `SPMath.c` | Geometry, in pure C (no Horos dependency) |
 | `test_math.c` | Synthetic-geometry tests, facing left and right |
+
+### Privacy
+
+On install and on each update the plugin tells sagitalapp.com, so the author can count users: the plugin and host versions, the OS and a random id stored on that computer. The server keeps only the approximate location (country, region, city) derived from the connection, never the IP. **No images, patient data or measurements are ever sent.**
 
 ### Disclaimer
 

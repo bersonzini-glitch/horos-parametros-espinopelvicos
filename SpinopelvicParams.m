@@ -76,6 +76,39 @@ static BOOL IsNewer(NSString *candidate, NSString *current) {
     return NO;
 }
 
+// Once per Horos session: tells sagitalapp.com about a first install or a new version, so the
+// author can count installs. Sends the plugin and Horos versions and a random id kept in Horos's
+// preferences; the server derives an approximate location from the connection and stores no IP.
+static void ReportInstall(void) {
+    static BOOL done;
+    if (done) return;
+    done = YES;
+    NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
+    NSString *iid = [d stringForKey:@"SagitalAppInstallID"], *reported = [d stringForKey:@"SagitalAppReportedVersion"];
+    NSString *version = BundleVersion();
+    if (iid && [reported isEqualToString:version]) return;
+    NSMutableDictionary *body = [@{
+        @"plugin": @"horos", @"so": @"mac", @"version": version,
+        @"evento": iid ? @"actualizacion" : @"instalacion",
+        @"instalacion_id": iid ?: NSUUID.UUID.UUIDString.lowercaseString,
+        @"app_version": [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"",
+    } mutableCopy];
+    if (reported) body[@"version_anterior"] = reported;
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://sagitalapp.com/api/instalacion"]];
+    req.HTTPMethod = @"POST";
+    req.timeoutInterval = 15;
+    [req setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    req.HTTPBody = [NSJSONSerialization dataWithJSONObject:body options:0 error:nil];
+    [[NSURLSession.sharedSession dataTaskWithRequest:req completionHandler:^(NSData *data, NSURLResponse *resp, NSError *err) {
+        NSInteger status = [resp isKindOfClass:NSHTTPURLResponse.class] ? ((NSHTTPURLResponse *)resp).statusCode : 0;
+        if (err || status < 200 || status >= 300) return;   // try again next session
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [d setObject:body[@"instalacion_id"] forKey:@"SagitalAppInstallID"];
+            [d setObject:version forKey:@"SagitalAppReportedVersion"];
+        });
+    }] resume];
+}
+
 static void CheckForUpdate(void (^done)(void)) {
     if (UpdateChecked) { done(); return; }
     UpdateChecked = YES;
@@ -128,6 +161,7 @@ static void CheckForUpdate(void (^done)(void)) {
     c.timer = [NSTimer scheduledTimerWithTimeInterval:0.25 target:c selector:@selector(tick:) userInfo:nil repeats:YES];
     [viewer setROIToolTag:t2DPoint];
     CheckForUpdate(^{ for (SPController *o in Controllers) [o showUpdateButton]; });
+    ReportInstall();
 }
 
 - (NSMutableArray<ROI *> *)sliceROIs {
@@ -612,7 +646,8 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
     a.messageText = [NSString stringWithFormat:@"SagitalApp %@", BundleVersion()];
     a.informativeText = @"Parámetros espinopélvicos en Horos: mide PI, PT, SS, LL, PI−LL, cifosis torácica, T1PA y SVA, con los modificadores SRS-Schwab.\n\n"
                         @"Autor: Dr. Bernardo Sonzini Astudillo\ncolumna-spine.com\n\n"
-                        @"Herramienta de apoyo; no es un dispositivo médico. Código abierto (licencia MIT).";
+                        @"Herramienta de apoyo; no es un dispositivo médico. Código abierto (licencia MIT).\n\n"
+                        @"Al instalarse o actualizarse avisa a sagitalapp.com la versión y la ubicación aproximada (país y ciudad), para contar usuarios. Nunca envía imágenes ni datos de pacientes.";
     [a addButtonWithTitle:@"Abrir columna-spine.com"];
     [a addButtonWithTitle:@"Cerrar"];
     if ([a runModal] == NSAlertFirstButtonReturn) {
