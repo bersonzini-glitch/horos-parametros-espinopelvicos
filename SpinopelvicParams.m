@@ -681,8 +681,7 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
     a.messageText = [NSString stringWithFormat:@"SagitalApp %@", BundleVersion()];
     a.informativeText = @"Parámetros espinopélvicos en Horos: mide PI, PT, SS, LL, PI−LL, cifosis torácica, T1PA y SVA, con los modificadores SRS-Schwab.\n\n"
                         @"Autor: Dr. Bernardo Sonzini Astudillo\ncolumna-spine.com\n\n"
-                        @"Herramienta de apoyo; no es un dispositivo médico. Código abierto (licencia MIT).\n\n"
-                        @"Al instalarse o actualizarse avisa a sagitalapp.com la versión y la ubicación aproximada (país y ciudad), para contar usuarios, y desde ahí recibe los avisos del autor. Nunca envía imágenes ni datos de pacientes.";
+                        @"Herramienta de apoyo; no es un dispositivo médico. Código abierto (licencia MIT).";
     [a addButtonWithTitle:@"Abrir columna-spine.com"];
     [a addButtonWithTitle:@"Cerrar"];
     if ([a runModal] == NSAlertFirstButtonReturn) {
