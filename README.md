@@ -38,6 +38,16 @@ Convenciones: LL y TK positivos significan lordosis y cifosis. SVA y PT positivo
 
 ### Instalación
 
+**Con Homebrew** (lo más simple si ya lo usás):
+
+```bash
+brew install --cask bersonzini-glitch/sagitalapp/sagitalapp-horos
+```
+
+Después cerrá Horos con Cmd+Q y volvé a abrirlo. Para actualizar: `brew upgrade --cask sagitalapp-horos`.
+
+**Con el instalador:**
+
 1. Descargá **`Instalar-SagitalApp-Horos.pkg`** desde [Releases](../../releases/latest).
 2. Hacé doble clic. Como el instalador no está notarizado por Apple, la Mac puede decir que no puede verificarlo: tocá **OK**, andá a **Ajustes del Sistema → Privacidad y seguridad**, bajá hasta el final y tocá **"Abrir igualmente"**.
 3. Seguí el instalador y, al terminar, cerrá y volvé a abrir Horos.
@@ -116,6 +126,8 @@ Sign conventions: positive LL and TK mean lordosis and kyphosis. Positive SVA an
 - macOS 11 or later.
 
 ### Install
+
+With [Homebrew](https://brew.sh): `brew install --cask bersonzini-glitch/sagitalapp/sagitalapp-horos`, then quit and reopen Horos. Or with the installer:
 
 1. Download **`Instalar-SagitalApp-Horos.pkg`** from [Releases](../../releases/latest).
 2. Double-click it. The installer isn't notarized by Apple, so macOS may say it can't verify it: click **OK**, open **System Settings → Privacy & Security**, scroll down and click **"Open Anyway"**.
