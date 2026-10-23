@@ -48,7 +48,7 @@ static NSColor *RGB(NSColor *c) { return [c colorUsingColorSpace:NSColorSpace.sR
 @property NSTextView *results;
 @property NSPopUpButton *tkPopup;
 @property NSButton *updateButton;
-@property NSTextField *notice;
+@property NSTextView *notice;
 @property NSTimer *timer;
 @end
 
@@ -113,6 +113,40 @@ static void ReportInstall(void) {
 // The author's current message, from sagitalapp.com/api/aviso. It is kept in Horos's preferences,
 // so without internet the panel shows the last one received; an empty message clears it.
 static NSString *const NoticeKey = @"SagitalAppAviso";
+
+// The message with clickable links: bare addresses (https://… or www.…) or [texto](https://…).
+static NSAttributedString *NoticeText(NSString *text) {
+    NSDictionary *base = @{NSFontAttributeName: [NSFont systemFontOfSize:12], NSForegroundColorAttributeName: NSColor.labelColor};
+    NSMutableAttributedString *out = [[NSMutableAttributedString alloc] initWithString:@"" attributes:base];
+    NSRegularExpression *re = [NSRegularExpression regularExpressionWithPattern:
+        @"\\[([^\\]\\n]+)\\]\\((https?://[^\\s)]+)\\)|(https?://[^\\s<>\"]+|www\\.[^\\s<>\"]+)" options:0 error:nil];
+    __block NSUInteger last = 0;
+    [re enumerateMatchesInString:text options:0 range:NSMakeRange(0, text.length) usingBlock:^(NSTextCheckingResult *m, NSMatchingFlags f, BOOL *stop) {
+        [out appendAttributedString:[[NSAttributedString alloc] initWithString:[text substringWithRange:NSMakeRange(last, m.range.location - last)] attributes:base]];
+        NSString *label, *url, *tail = @"";
+        if ([m rangeAtIndex:1].location != NSNotFound) {
+            label = [text substringWithRange:[m rangeAtIndex:1]];
+            url = [text substringWithRange:[m rangeAtIndex:2]];
+        } else {
+            url = [text substringWithRange:[m rangeAtIndex:3]];
+            // A sentence's closing punctuation is not part of the address.
+            while (url.length && [@".,;:!?)" containsString:[url substringFromIndex:url.length - 1]]) {
+                tail = [[url substringFromIndex:url.length - 1] stringByAppendingString:tail];
+                url = [url substringToIndex:url.length - 1];
+            }
+            label = url;
+            if ([url hasPrefix:@"www."]) url = [@"https://" stringByAppendingString:url];
+        }
+        NSMutableDictionary *link = [base mutableCopy];
+        NSURL *u = [NSURL URLWithString:url];
+        if (u) link[NSLinkAttributeName] = u;
+        [out appendAttributedString:[[NSAttributedString alloc] initWithString:label attributes:link]];
+        [out appendAttributedString:[[NSAttributedString alloc] initWithString:tail attributes:base]];
+        last = NSMaxRange(m.range);
+    }];
+    [out appendAttributedString:[[NSAttributedString alloc] initWithString:[text substringFromIndex:last] attributes:base]];
+    return out;
+}
 
 static void FetchNotice(void (^done)(void)) {
     NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://sagitalapp.com/api/aviso"]];
@@ -316,16 +350,27 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     self.updateButton.hidden = YES;
 
     // Messages from the author (sagitalapp.com), below everything else.
-    self.notice = [NSTextField wrappingLabelWithString:@""];
-    self.notice.font = [NSFont systemFontOfSize:12];
-    self.notice.selectable = YES;
-    self.notice.preferredMaxLayoutWidth = 340;
+    // A text view rather than a label: it wraps to its width and opens links on click.
+    NSTextView *nt = [NSTextView new];
+    nt.editable = NO;
+    nt.selectable = YES;
+    nt.drawsBackground = NO;
+    nt.textContainerInset = NSMakeSize(0, 2);
+    nt.textContainer.lineFragmentPadding = 0;
+    nt.autoresizingMask = NSViewWidthSizable;
+    self.notice = nt;
+    NSScrollView *ns = [NSScrollView new];
+    ns.documentView = nt;
+    ns.hasVerticalScroller = YES;
+    ns.autohidesScrollers = YES;
+    ns.drawsBackground = NO;
+    ns.borderType = NSNoBorder;
     NSBox *noticeBox = [NSBox new];
     noticeBox.title = @"Avisos de SagitalApp";
     noticeBox.titleFont = [NSFont systemFontOfSize:11];
     noticeBox.contentViewMargins = NSMakeSize(8, 6);
-    noticeBox.contentView = self.notice;
-    [self.notice.heightAnchor constraintGreaterThanOrEqualToConstant:32].active = YES;
+    noticeBox.contentView = ns;
+    [ns.heightAnchor constraintEqualToConstant:48].active = YES;
     [self showNotice];
 
     NSStackView *v = [NSStackView stackViewWithViews:@[self.updateButton, self.instruction, ts, stepButtons, tkRow, rs, self.calibrationLabel, bottom, noticeBox]];
@@ -690,7 +735,7 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
 }
 
 - (void)showNotice {
-    self.notice.stringValue = [NSUserDefaults.standardUserDefaults stringForKey:NoticeKey] ?: @"";
+    [self.notice.textStorage setAttributedString:NoticeText([NSUserDefaults.standardUserDefaults stringForKey:NoticeKey] ?: @"")];
 }
 
 - (void)showUpdateButton {
