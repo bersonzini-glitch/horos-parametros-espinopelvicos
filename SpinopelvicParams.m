@@ -14,8 +14,8 @@ typedef struct { const char *name, *instruction; BOOL optional; } SPStep;
 // Names are shown next to each point on the image, so they are short. The TK pair takes its
 // level (T4/T5) from the popup.
 static const SPStep Steps[SPLandmarkCount] = {
-    [SPFemoralHead1] = {"CF1", "Centro de la cabeza femoral 1", NO},
-    [SPFemoralHead2] = {"CF2", "Centro de la cabeza femoral 2 (saltar si se superponen)", YES},
+    [SPFemoralHead1] = {"CF1", "Círculo sobre la cabeza femoral 1", NO},
+    [SPFemoralHead2] = {"CF2", "Círculo sobre la cabeza femoral 2 (saltar si se superponen)", YES},
     [SPS1Posterior] = {"S1 post", "S1: esquina posterosuperior del platillo", NO},
     [SPS1Anterior] = {"S1 ant", "S1: esquina anterosuperior del platillo", NO},
     [SPL1Posterior] = {"L1 post", "L1: platillo superior, esquina posterior", NO},
@@ -27,6 +27,11 @@ static const SPStep Steps[SPLandmarkCount] = {
     [SPT1Center] = {"T1", "Centro del cuerpo vertebral de T1", YES},
     [SPC7Center] = {"C7", "Centro del cuerpo vertebral de C7", YES},
 };
+
+// The femoral heads are marked with a circle (Horos' oval, drawn from the centre outwards and then
+// fitted to the head's outline); the computation uses its centre. Every other landmark is a point.
+static BOOL IsHead(NSInteger i) { return i == SPFemoralHead1 || i == SPFemoralHead2; }
+static ToolMode ToolFor(NSInteger i) { return IsHead(i) ? tOval : t2DPoint; }
 
 // Horos reads RGB components, which catalog colors such as systemGreenColor do not have.
 static NSColor *RGB(NSColor *c) { return [c colorUsingColorSpace:NSColorSpace.sRGBColorSpace]; }
@@ -50,6 +55,7 @@ static NSColor *RGB(NSColor *c) { return [c colorUsingColorSpace:NSColorSpace.sR
 @property NSButton *updateButton;
 @property NSTextView *notice;
 @property NSTimer *timer;
+@property ROI *pendingCircle;   // a head circle still being dragged out
 @end
 
 static NSMutableArray<SPController *> *Controllers;
@@ -217,7 +223,7 @@ static void CheckForUpdate(void (^done)(void)) {
     [nc addObserver:c selector:@selector(roiAdded:) name:@"addROI" object:nil];
     [nc addObserver:c selector:@selector(viewerClosed:) name:@"CloseViewerNotification" object:viewer];
     c.timer = [NSTimer scheduledTimerWithTimeInterval:0.25 target:c selector:@selector(tick:) userInfo:nil repeats:YES];
-    [viewer setROIToolTag:t2DPoint];
+    [viewer setROIToolTag:c.active >= 0 ? ToolFor(c.active) : t2DPoint];
     CheckForUpdate(^{ for (SPController *o in Controllers) [o showUpdateButton]; });
     ReportInstall();
     FetchNotice(^{ for (SPController *o in Controllers) [o showNotice]; });
@@ -250,9 +256,11 @@ static void CheckForUpdate(void (^done)(void)) {
             [self applyCalibrationLine:r mm:mm];
             continue;
         }
-        if (r.type != t2DPoint) continue;
+        if (r.type != t2DPoint && r.type != tOval) continue;
         for (NSInteger i = 0; i < SPLandmarkCount; i++) {
             if (_rois[i]) continue;
+            // Heads may be circles, or points from measurements made before 1.7.
+            if (r.type == tOval && !IsHead(i)) continue;
             if ([r.name isEqualToString:[self nameForStep:i]]) { _rois[i] = r; r.displayTextualData = NO; break; }
             if ((i == SPTKPosterior || i == SPTKAnterior) && [r.name hasPrefix:@"T5 "]) {
                 self.tkLevel = @"T5";
@@ -420,11 +428,14 @@ static NSButton *Button(NSString *title, id target, SEL action) {
 - (void)setActiveStep:(NSInteger)i {
     self.active = i;
     if (i >= 0) {
-        self.instruction.stringValue = [NSString stringWithFormat:@"Hacé clic en: %@%@", [self instructionForStep:i],
-                                        _rois[i] ? @"\n(reemplaza el punto actual)" : @""];
+        self.instruction.stringValue = IsHead(i)
+            ? [NSString stringWithFormat:@"%@: arrastrá desde el centro hasta el borde y después ajustalo al contorno.%@",
+               [self instructionForStep:i], _rois[i] ? @" (Reemplaza el actual.)" : @""]
+            : [NSString stringWithFormat:@"Hacé clic en: %@%@", [self instructionForStep:i],
+               _rois[i] ? @"\n(reemplaza el punto actual)" : @""];
         [self.table selectRowIndexes:[NSIndexSet indexSetWithIndex:i] byExtendingSelection:NO];
         [self.table scrollRowToVisible:i];
-        [self.viewer setROIToolTag:t2DPoint];
+        [self.viewer setROIToolTag:ToolFor(i)];
     } else {
         self.instruction.stringValue = @"Listo. Arrastrá cualquier punto para ajustarlo, o elegí un paso para rehacerlo.";
         [self.table deselectAll:nil];
@@ -443,8 +454,27 @@ static NSButton *Button(NSString *title, id target, SEL action) {
 - (void)roiAdded:(NSNotification *)n {
     if (n.object != self.viewer.imageView || self.active < 0) return;
     ROI *r = n.userInfo[@"ROI"];
-    if (r.type != t2DPoint || [n.userInfo[@"sliceNumber"] intValue] != self.slice) return;
+    if (r.type != ToolFor(self.active) || [n.userInfo[@"sliceNumber"] intValue] != self.slice) return;
+    // Horos announces an oval on mouse-down, before it has a size; take it once the drag ends (tick).
+    if (r.type == tOval) { self.pendingCircle = r; return; }
+    [self assignROI:r];
+}
 
+// A finished head circle: one radius (the mean of the two Horos measured while dragging), then
+// assigned like a point. A circle too small to see was a stray click; Horos drops it anyway.
+- (void)finishPendingCircle {
+    ROI *r = self.pendingCircle;
+    if (!r || r.ROImode == ROI_drawing) return;
+    self.pendingCircle = nil;
+    if (self.active < 0 || ![self.sliceROIs containsObject:r]) return;
+    NSRect rr = r.rect;
+    CGFloat radius = (fabs(rr.size.width) + fabs(rr.size.height)) / 2;
+    if (radius < 2) return;
+    r.rect = NSMakeRect(rr.origin.x, rr.origin.y, radius, radius);
+    [self assignROI:r];
+}
+
+- (void)assignROI:(ROI *)r {
     NSInteger i = self.active;
     if (_rois[i] && _rois[i] != r) [self.viewer deleteROI:_rois[i]];
     _rois[i] = r;
@@ -559,6 +589,7 @@ static NSButton *Button(NSString *title, id target, SEL action) {
 
 - (void)tick:(NSTimer *)t {
     if (!self.viewer.window.isVisible) return;
+    [self finishPendingCircle];
     [self refresh:NO];
 }
 
@@ -662,7 +693,8 @@ static NSString *Deg(int has, double v) { return has ? [NSString stringWithForma
         l.name = [self nameForStep:i];  // also sizes the rect to the text
         NSRect rr = l.rect;
         NSPoint pt = _rois[i].rect.origin;
-        rr.origin = NSMakePoint(pt.x + (rr.size.width / 2 + 10) / scale, pt.y);  // tText is drawn centred on its origin
+        CGFloat beside = _rois[i].type == tOval ? fabs(_rois[i].rect.size.width) : 0;  // right of a circle's edge
+        rr.origin = NSMakePoint(pt.x + beside + (rr.size.width / 2 + 10) / scale, pt.y);  // tText is drawn centred on its origin
         l.rect = rr;
     }
 }
@@ -687,6 +719,15 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
     }
 
     SPPoint f1 = p[SPFemoralHead1], f2 = p[SPFemoralHead2];
+    // A small cross on the centre of each head circle, the point the measurements use.
+    for (NSInteger h = SPFemoralHead1; h <= SPFemoralHead2; h++) {
+        ROI *c = _rois[h];
+        BOOL circle = c && c.type == tOval && p[h].ok;
+        CGFloat arm = circle ? MAX(fabs(c.rect.size.width) * 0.15, 3) : 0;
+        NSPoint o = NP(p[h]);
+        [self setLine:[NSString stringWithFormat:@"centro%ld-h", (long)h] from:NSMakePoint(o.x - arm, o.y) to:NSMakePoint(o.x + arm, o.y) color:cyan show:circle];
+        [self setLine:[NSString stringWithFormat:@"centro%ld-v", (long)h] from:NSMakePoint(o.x, o.y - arm) to:NSMakePoint(o.x, o.y + arm) color:cyan show:circle];
+    }
     BOOL hasHip = f1.ok || f2.ok;
     NSPoint hip = f1.ok && f2.ok ? Mid(f1, f2) : NP(f1.ok ? f1 : f2);
     [self setLine:@"bicoxofemoral" from:NP(f1) to:NP(f2) color:cyan show:f1.ok && f2.ok];

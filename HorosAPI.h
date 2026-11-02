@@ -6,6 +6,7 @@
 
 typedef NS_ENUM(short, ToolMode) {
     tMesure = 5,
+    tOval = 9,          // rect.origin is the centre, rect.size the two radii
     tText = 13,
     t2DPoint = 19,
 };

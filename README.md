@@ -69,8 +69,8 @@ Sin ese paso macOS bloquea la carga del plugin.
 1. Abrí en el visor una **telerradiografía de columna completa de perfil**, de pie.
 2. Menú **Plugins → ROI Tools → SagitalApp – Parámetros espinopélvicos…** Se abre un panel con los pasos, y la herramienta de punto queda activa.
 3. Hacé clic en la imagen en el orden que pide el panel. Cada clic avanza al paso siguiente:
-   1. Centro de la cabeza femoral 1
-   2. Centro de la cabeza femoral 2 (opcional; saltalo si se superponen)
+   1. Cabeza femoral 1: un **círculo** sobre su contorno. Arrastrá desde el centro hasta el borde y ajustalo; el plugin usa su centro (marcado con una cruz).
+   2. Cabeza femoral 2: otro círculo (opcional; saltalo si se superponen)
    3. S1: esquina posterosuperior y anterosuperior del platillo
    4. L1: esquinas posterior y anterior del platillo superior
    5. T12: esquinas posterior y anterior del platillo inferior (opcional)
@@ -153,7 +153,7 @@ Without this, macOS refuses to load the plugin.
 
 1. Open a **standing lateral whole-spine radiograph** in the 2D viewer.
 2. **Plugins → ROI Tools → SagitalApp – Parámetros espinopélvicos…** A floating panel lists the steps, and the point tool is selected.
-3. Click each landmark as the panel asks: femoral head centers, the S1, L1, T12 and T4/T5 endplate corners (posterior, then anterior), and the T1 and C7 body centers. Optional steps can be skipped.
+3. Mark each landmark as the panel asks: a circle on each femoral head (its centre is used), the S1, L1, T12 and T4/T5 endplate corners (posterior, then anterior), and the T1 and C7 body centers. Optional steps can be skipped.
 4. Results and helper lines update live. Drag any point to adjust it.
 5. **Copiar resultados** copies the report to the clipboard. **Acerca de…** shows the version and author and opens columna-spine.com.
 
