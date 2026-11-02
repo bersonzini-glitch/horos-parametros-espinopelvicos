@@ -626,18 +626,27 @@ static NSButton *Button(NSString *title, id target, SEL action) {
 
 static NSString *Deg(int has, double v) { return has ? [NSString stringWithFormat:@"%6.1f°", v] : @"     —"; }
 
+// Normal range next to a value, flagged when outside it. Ranges from AOSpine N2.M6.T3 (Valacco):
+// PI, PT, SS, LL, TK (T5–T12) and SVA; PI−LL < 10° (SRS-Schwab) and T1PA < 20° (Protopsaltis 2014).
+static NSString *Normal(int has, double v, double lo, double hi, NSString *range) {
+    if (!has) return @"";
+    return [NSString stringWithFormat:@"%@(%@)", v < lo || v > hi ? @" ⚠ " : @"   ", range];
+}
+
 - (void)showResults:(SPResult)r {
     NSString *sva = !r.hasSVA ? @"     —" : [NSString stringWithFormat:r.svaInMM ? @"%+6.1f mm" : @"%+6.0f px", r.SVA];
-    NSMutableString *s = [NSMutableString string];
-    [s appendFormat:@"PI    Incidencia pélvica   %@\n", Deg(r.hasPI, r.PI)];
-    [s appendFormat:@"PT    Tilt pélvico         %@\n", Deg(r.hasPT, r.PT)];
-    [s appendFormat:@"SS    Slope sacro          %@\n", Deg(r.hasSS, r.SS)];
     // Shown negative for lordosis, the usual convention in spinal deformity; PI−LL uses its magnitude.
-    [s appendFormat:@"LL    Lordosis L1–S1       %@\n", Deg(r.hasLL, r.LL == 0 ? 0 : -r.LL)];
-    [s appendFormat:@"PI−LL Mismatch             %@\n", Deg(r.hasPILL, r.PILL)];
-    [s appendFormat:@"TK    Cifosis %@–T12       %@\n", self.tkLevel, Deg(r.hasTK, r.TK)];
-    [s appendFormat:@"T1PA  T1 pelvic angle      %@\n", Deg(r.hasT1PA, r.T1PA)];
-    [s appendFormat:@"SVA   C7 – S1 posterior    %@\n", sva];
+    double ll = r.LL == 0 ? 0 : -r.LL;
+    NSMutableString *s = [NSMutableString string];
+    [s appendString:@"                                     Normal\n"];
+    [s appendFormat:@"PI    Incidencia pélvica   %@%@\n", Deg(r.hasPI, r.PI), Normal(r.hasPI, r.PI, 40, 65, @"40–65")];
+    [s appendFormat:@"PT    Tilt pélvico         %@%@\n", Deg(r.hasPT, r.PT), Normal(r.hasPT, r.PT, 10, 25, @"10–25")];
+    [s appendFormat:@"SS    Slope sacro          %@%@\n", Deg(r.hasSS, r.SS), Normal(r.hasSS, r.SS, 30, 50, @"30–50")];
+    [s appendFormat:@"LL    Lordosis L1–S1       %@%@\n", Deg(r.hasLL, ll), Normal(r.hasLL, ll, -60, -40, @"−60 a −40")];
+    [s appendFormat:@"PI−LL Mismatch             %@%@\n", Deg(r.hasPILL, r.PILL), Normal(r.hasPILL, r.PILL, -INFINITY, 10, @"<10")];
+    [s appendFormat:@"TK    Cifosis %@–T12       %@%@\n", self.tkLevel, Deg(r.hasTK, r.TK), Normal(r.hasTK, r.TK, 20, 40, @"20–40")];
+    [s appendFormat:@"T1PA  T1 pelvic angle      %@%@\n", Deg(r.hasT1PA, r.T1PA), Normal(r.hasT1PA, r.T1PA, -INFINITY, 20, @"<20")];
+    [s appendFormat:@"SVA   C7 – S1 posterior    %@%@\n", sva, Normal(r.hasSVA && r.svaInMM, r.SVA, -25, 25, @"±25 mm")];
 
     const char *mPILL = SPSchwabPILL(&r), *mPT = SPSchwabPT(&r), *mSVA = SPSchwabSVA(&r);
     if (mPILL || mPT || mSVA) {
@@ -648,6 +657,7 @@ static NSString *Deg(int has, double v) { return has ? [NSString stringWithForma
     }
     if (r.hasLL || r.hasTK) [s appendString:@"\nLL negativa = lordosis. TK positiva = cifosis.\n"];
     if (r.hasSVA || r.hasPT) [s appendString:@"SVA y PT positivos = hacia anterior.\n"];
+    [s appendString:@"Normales: AOSpine (Valacco); PI−LL SRS-Schwab; T1PA Protopsaltis 2014. TK normal medida T5–T12.\n"];
     self.resultsText = s;
     self.results.string = s;
 }
