@@ -632,7 +632,8 @@ static NSString *Deg(int has, double v) { return has ? [NSString stringWithForma
     [s appendFormat:@"PI    Incidencia pélvica   %@\n", Deg(r.hasPI, r.PI)];
     [s appendFormat:@"PT    Tilt pélvico         %@\n", Deg(r.hasPT, r.PT)];
     [s appendFormat:@"SS    Slope sacro          %@\n", Deg(r.hasSS, r.SS)];
-    [s appendFormat:@"LL    Lordosis L1–S1       %@\n", Deg(r.hasLL, r.LL)];
+    // Shown negative for lordosis, the usual convention in spinal deformity; PI−LL uses its magnitude.
+    [s appendFormat:@"LL    Lordosis L1–S1       %@\n", Deg(r.hasLL, r.LL == 0 ? 0 : -r.LL)];
     [s appendFormat:@"PI−LL Mismatch             %@\n", Deg(r.hasPILL, r.PILL)];
     [s appendFormat:@"TK    Cifosis %@–T12       %@\n", self.tkLevel, Deg(r.hasTK, r.TK)];
     [s appendFormat:@"T1PA  T1 pelvic angle      %@\n", Deg(r.hasT1PA, r.T1PA)];
@@ -645,7 +646,7 @@ static NSString *Deg(int has, double v) { return has ? [NSString stringWithForma
         if (mPT) [s appendFormat:@"  PT     %-3s (0 <20° · + 20–30° · ++ >30°)\n", mPT];
         if (mSVA) [s appendFormat:@"  SVA    %-3s (0 <4 cm · + 4–9,5 cm · ++ >9,5 cm)\n", mSVA];
     }
-    if (r.hasLL || r.hasTK) [s appendString:@"\nLL y TK positivos = lordosis y cifosis.\n"];
+    if (r.hasLL || r.hasTK) [s appendString:@"\nLL negativa = lordosis. TK positiva = cifosis.\n"];
     if (r.hasSVA || r.hasPT) [s appendString:@"SVA y PT positivos = hacia anterior.\n"];
     self.resultsText = s;
     self.results.string = s;

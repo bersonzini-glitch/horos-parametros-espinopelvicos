@@ -29,7 +29,7 @@ Native **arm64** plugin for **Horos 4** that measures sagittal spinopelvic align
 
 También muestra los **modificadores SRS-Schwab** de PI−LL, PT y SVA (0 / + / ++).
 
-Convenciones: LL y TK positivos significan lordosis y cifosis. SVA y PT positivos significan hacia anterior. El paciente puede mirar a la izquierda o a la derecha: el plugin detecta la orientación por las esquinas de los platillos.
+Convenciones: la lordosis (LL) se muestra negativa y la cifosis (TK) positiva; el PI−LL usa el valor absoluto de la lordosis. SVA y PT positivos significan hacia anterior. El paciente puede mirar a la izquierda o a la derecha: el plugin detecta la orientación por las esquinas de los platillos.
 
 ### Requisitos
 
@@ -122,7 +122,7 @@ Herramienta de apoyo para medición. Los valores dependen de dónde se coloquen 
 
 It also shows the **SRS-Schwab** sagittal modifiers for PI−LL, PT and SVA.
 
-Sign conventions: positive LL and TK mean lordosis and kyphosis. Positive SVA and PT mean anterior. The patient may face either way, since the facing direction is taken from the endplate corners.
+Sign conventions: lordosis (LL) is shown negative and kyphosis (TK) positive; PI−LL uses the magnitude of LL. Positive SVA and PT mean anterior. The patient may face either way, since the facing direction is taken from the endplate corners.
 
 ### Requirements
 
