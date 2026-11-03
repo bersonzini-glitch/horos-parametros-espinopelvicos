@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Builds SpinopelvicParams.horosplugin (arm64) and runs the geometry tests.
+# Builds SpinopelvicParams.horosplugin (arm64, also loads in OsiriX) and runs the geometry tests.
 set -euo pipefail
 cd "${0:A:h}"
 
@@ -23,10 +23,12 @@ echo "Built $OUT"
 
 # Installer package: files installed by Installer are not quarantined, so it works
 # for people downloading the plugin without needing Terminal.
-mkdir -p "build/pkgroot/Library/Application Support/Horos/Plugins"
+# The same bundle also runs in OsiriX, which looks for the .osirixplugin extension in its own folder.
+mkdir -p "build/pkgroot/Library/Application Support/Horos/Plugins" "build/pkgroot/Library/Application Support/OsiriX/Plugins"
 cp -R "$OUT" "build/pkgroot/Library/Application Support/Horos/Plugins/"
+cp -R "$OUT" "build/pkgroot/Library/Application Support/OsiriX/Plugins/SpinopelvicParams.osirixplugin"
 pkgbuild --analyze --root build/pkgroot build/component.plist >/dev/null
-plutil -replace 0.BundleIsRelocatable -bool NO build/component.plist
+for i in 0 1; do plutil -replace $i.BundleIsRelocatable -bool NO build/component.plist; done
 VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" Info.plist)
 pkgbuild --root build/pkgroot --component-plist build/component.plist --install-location / \
   --identifier com.columnaspine.horos.SpinopelvicParams --version "$VERSION" build/plugin.pkg >/dev/null

@@ -1,4 +1,4 @@
-# SagitalApp para Horos — parámetros espinopélvicos (Apple Silicon)
+# SagitalApp para Horos y OsiriX — parámetros espinopélvicos (Apple Silicon)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/sagitalapp-logo-dark.png">
@@ -33,7 +33,7 @@ Convenciones: la lordosis (LL) se muestra negativa y la cifosis (TK) positiva; e
 
 ### Requisitos
 
-- Horos **4.x** en una Mac con Apple Silicon (M1 o posterior).
+- Horos **4.x** u **OsiriX** (MD o Lite) en una Mac con Apple Silicon (M1 o posterior). Desde la versión 1.10 el mismo instalador lo deja en los dos programas; en OsiriX queda en `~/Library/Application Support/OsiriX/Plugins/SpinopelvicParams.osirixplugin`.
 - macOS 11 o posterior.
 
 ### Instalación
@@ -126,7 +126,7 @@ Sign conventions: lordosis (LL) is shown negative and kyphosis (TK) positive; PI
 
 ### Requirements
 
-- Horos **4.x** on an Apple Silicon Mac (M1 or later).
+- Horos **4.x** or **OsiriX** (MD or Lite) on an Apple Silicon Mac (M1 or later). From 1.10 the installer puts the plugin in both; OsiriX takes the same bundle renamed `SpinopelvicParams.osirixplugin`.
 - macOS 11 or later.
 
 ### Install
@@ -167,7 +167,7 @@ Landmarks are regular Horos ROIs, so they are saved with the image and picked up
 ./build.sh   # runs the geometry tests, then builds the plugin, the .zip and the .pkg into build/
 ```
 
-The plugin links against the Horos executable with `-bundle_loader` and declares only the Horos classes it uses (`HorosAPI.h`). Horos 4 is signed with `disable-library-validation`, so an ad-hoc signature is enough.
+The plugin links against the Horos executable with `-bundle_loader` and declares only the Horos classes it uses (`HorosAPI.h`). Horos 4 is signed with `disable-library-validation`, so an ad-hoc signature is enough. OsiriX exports the same classes from its executable and has the same entitlement, so the very same binary loads there too (symbols are bound to `<main-executable>`).
 
 | File | Purpose |
 |---|---|

@@ -68,6 +68,16 @@ static NSString *const ReleasesAPI = @"https://api.github.com/repos/bersonzini-g
 static NSDictionary *LatestRelease;   // @{@"version", @"notes", @"pkg"} when an update exists
 static BOOL UpdateChecked;
 
+// The same bundle runs in Horos and in OsiriX (both export the classes it uses from their
+// executable); the installer puts a copy in each one's plugin folder.
+static BOOL IsOsiriX(void) {
+    return [NSBundle.mainBundle.bundleIdentifier hasPrefix:@"com.rossetantoine.osirix"];
+}
+
+static NSString *HostName(void) {
+    return IsOsiriX() ? @"OsiriX" : @"Horos";
+}
+
 static NSString *BundleVersion(void) {
     return [[NSBundle bundleForClass:SPController.class] objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"0";
 }
@@ -95,7 +105,7 @@ static void ReportInstall(void) {
     NSString *version = BundleVersion();
     if (iid && [reported isEqualToString:version]) return;
     NSMutableDictionary *body = [@{
-        @"plugin": @"horos", @"so": @"mac", @"version": version,
+        @"plugin": IsOsiriX() ? @"osirix" : @"horos", @"so": @"mac", @"version": version,
         @"evento": iid ? @"actualizacion" : @"instalacion",
         @"instalacion_id": iid ?: NSUUID.UUID.UUIDString.lowercaseString,
         @"app_version": [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"",
@@ -548,7 +558,7 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     NSAlert *a = [NSAlert new];
     if (!line) {
         a.messageText = @"Dibujá primero una línea de medición";
-        a.informativeText = @"Usá la herramienta de longitud de Horos sobre un objeto de tamaño conocido (regla, esfera de calibración, implante) y volvé a tocar Calibrar.";
+        a.informativeText = [NSString stringWithFormat:@"Usá la herramienta de longitud de %@ sobre un objeto de tamaño conocido (regla, esfera de calibración, implante) y volvé a tocar Calibrar.", HostName()];
         [a runModal];
         return;
     }
@@ -779,9 +789,9 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
 - (void)showAbout:(id)sender {
     NSAlert *a = [NSAlert new];
     a.messageText = [NSString stringWithFormat:@"SagitalApp %@", BundleVersion()];
-    a.informativeText = @"Parámetros espinopélvicos en Horos: mide PI, PT, SS, LL, PI−LL, cifosis torácica, T1PA y SVA, con los modificadores SRS-Schwab.\n\n"
+    a.informativeText = [NSString stringWithFormat:@"Parámetros espinopélvicos en %@: mide PI, PT, SS, LL, PI−LL, cifosis torácica, T1PA y SVA, con los modificadores SRS-Schwab.\n\n"
                         @"Autor: Dr. Bernardo Sonzini Astudillo\ncolumna-spine.com\n\n"
-                        @"Herramienta de apoyo; no es un dispositivo médico. Código abierto (licencia MIT).";
+                        @"Herramienta de apoyo; no es un dispositivo médico. Código abierto (licencia MIT).", HostName()];
     [a addButtonWithTitle:@"Abrir columna-spine.com"];
     [a addButtonWithTitle:@"Cerrar"];
     if ([a runModal] == NSAlertFirstButtonReturn) {
@@ -806,8 +816,8 @@ static NSPoint NP(SPPoint a) { return NSMakePoint(a.x, a.y); }
     if (notes.length > 600) notes = [[notes substringToIndex:600] stringByAppendingString:@"…"];
     NSAlert *a = [NSAlert new];
     a.messageText = [NSString stringWithFormat:@"Hay una versión nueva: %@ (tenés la %@)", version, BundleVersion()];
-    a.informativeText = [NSString stringWithFormat:@"%@%@Se va a descargar el instalador y se abrirá. Seguí sus pasos y, al terminar, cerrá y volvé a abrir Horos.",
-                         notes, notes.length ? @"\n\n" : @""];
+    a.informativeText = [NSString stringWithFormat:@"%@%@Se va a descargar el instalador y se abrirá. Seguí sus pasos y, al terminar, cerrá y volvé a abrir %@.",
+                         notes, notes.length ? @"\n\n" : @"", HostName()];
     [a addButtonWithTitle:@"Descargar e instalar"];
     [a addButtonWithTitle:@"Ahora no"];
     if ([a runModal] != NSAlertFirstButtonReturn) return;
