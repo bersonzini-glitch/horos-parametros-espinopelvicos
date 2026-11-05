@@ -315,6 +315,10 @@ static NSButton *Button(NSString *title, id target, SEL action) {
     t.rowHeight = 20;
     t.usesAlternatingRowBackgroundColors = YES;
     t.allowsEmptySelection = YES;
+    // Every click activates its step, also on the row already selected: selection-change alone
+    // missed that case, e.g. after another Horos tool had taken the mouse.
+    t.target = self;
+    t.action = @selector(rowClicked:);
     NSTableColumn *state = [[NSTableColumn alloc] initWithIdentifier:@"state"];
     state.width = 22;
     state.resizingMask = NSTableColumnNoResizing;
@@ -427,6 +431,10 @@ static NSButton *Button(NSString *title, id target, SEL action) {
 }
 
 - (BOOL)tableView:(NSTableView *)tv shouldEditTableColumn:(NSTableColumn *)col row:(NSInteger)row { return NO; }
+
+- (void)rowClicked:(id)sender {
+    if (self.table.clickedRow >= 0) [self setActiveStep:self.table.clickedRow];
+}
 
 - (void)tableViewSelectionDidChange:(NSNotification *)n {
     NSInteger row = self.table.selectedRow;
